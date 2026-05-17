@@ -1,4 +1,13 @@
 .DS_Store
+node_modules/
+dist/
+release/
+asr-bench/
+resources/monkey-models/
+resources/candidates/
+.env
+.env.*
+*.log
 *.dmg
 *.zip
 *.blockmap

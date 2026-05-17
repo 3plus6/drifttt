@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      background: transparent;
+      overflow: hidden;
+      -webkit-app-region: drag;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+    }
+    .container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 12px;
+      line-height: 1;
+      background: rgba(24, 24, 24, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: rgba(255, 255, 255, 0.85);
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      border: 0.5px solid rgba(255, 255, 255, 0.35);
+    }
+    /* 波形バー */
+    .waveform {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      height: 14px;
+    }
+    .waveform .bar {
+      width: 2px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 1px;
+      animation: wave 1s ease-in-out infinite;
+    }
+    .waveform .bar:nth-child(1) { height: 4px; animation-delay: 0s; }
+    .waveform .bar:nth-child(2) { height: 8px; animation-delay: 0.15s; }
+    .waveform .bar:nth-child(3) { height: 12px; animation-delay: 0.3s; }
+    .waveform .bar:nth-child(4) { height: 6px; animation-delay: 0.45s; }
+    .waveform .bar:nth-child(5) { height: 10px; animation-delay: 0.6s; }
+    @keyframes wave {
+      0%, 100% { transform: scaleY(0.4); }
+      50% { transform: scaleY(1); }
+    }
+    /* スピナー */
+    .spinner {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      border-top-color: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .label { white-space: nowrap; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container" id="status">
+    <span id="icon"></span>
+    <span class="label" id="label"></span>
+  </div>
+  <script>
+    const { ipcRenderer } = require('electron');
+    const icon = document.getElementById('icon');
+    const label = document.getElementById('label');
+
+    const container = document.getElementById('status');
+    ipcRenderer.on('set-status', (event, mode) => {
+      container.style.borderColor = 'rgba(255, 255, 255, 0.35)';
+      if (mode === 'recording') {
+        icon.innerHTML = '<div class="waveform"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>';
+        label.textContent = 'Recording';
+      } else if (mode === 'recording-cleanup') {
+        icon.innerHTML = '<div class="waveform"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>';
+        label.textContent = 'Compose';
+        container.style.borderColor = 'rgba(130, 200, 255, 0.9)';
+      } else if (mode === 'processing') {
+        icon.innerHTML = '<span class="spinner"></span>';
+        label.textContent = 'Processing';
+      } else if (mode === 'processing-cleanup') {
+        icon.innerHTML = '<span class="spinner"></span>';
+        label.textContent = 'Composing...';
+        container.style.borderColor = 'rgba(130, 200, 255, 0.9)';
+      }
+    });
+  </script>
+</body>
+</html>

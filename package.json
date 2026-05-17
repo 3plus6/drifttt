@@ -1,0 +1,90 @@
+{
+  "name": "drifttt",
+  "version": "1.0.0",
+  "description": "drifttt - Write at the speed of thought.",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "main": "dist/main/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:renderer": "mkdir -p dist/renderer && cp src/renderer/*.html dist/renderer/",
+    "build": "npm run build:main && npm run build:renderer",
+    "start": "npm run build && electron .",
+    "dev": "npm run build && electron .",
+    "pack": "npm run build && electron-builder --mac --dir",
+    "dist": "npm run build && electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.itokin.drifttt",
+    "productName": "drifttt",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": "dmg",
+      "icon": "resources/icon.icns",
+      "entitlements": "resources/entitlements.mac.plist",
+      "entitlementsInherit": "resources/entitlements.mac.plist",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "音声入力のためにマイクを使用します",
+        "NSSpeechRecognitionUsageDescription": "音声をMac上で文字起こしするために音声認識を使用します"
+      }
+    },
+    "asarUnpack": [
+      "resources/sounds/**/*",
+      "resources/tray-icon.png",
+      "node_modules/better-sqlite3/**/*",
+      "node_modules/bindings/**/*",
+      "node_modules/file-uri-to-path/**/*",
+      "node_modules/node-gyp-build/**/*",
+      "node_modules/prebuild-install/**/*",
+      "node_modules/uiohook-napi/**/*"
+    ],
+    "files": [
+      "dist/main/**/*",
+      "!dist/main/gmail/**",
+      "dist/renderer/**/*",
+      "dist/shared/**/*",
+      "resources/**/*",
+      "!resources/candidates/**",
+      "!resources/models/**",
+      "!resources/monkey-models/**",
+      "!resources/*.swift",
+      "!resources/pop.wav",
+      "!resources/start.wav",
+      "!resources/end.wav",
+      "!node_modules/googleapis/**",
+      "!node_modules/google-auth-library/**"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/key-listener",
+        "to": "key-listener"
+      },
+      {
+        "from": "resources/text-typer",
+        "to": "text-typer"
+      },
+      {
+        "from": "resources/apple-speech",
+        "to": "apple-speech"
+      }
+    ],
+    "afterPack": "./scripts/fix-permissions.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "bindings": "^1.5.0",
+    "file-uri-to-path": "^1.0.0",
+    "googleapis": "^144.0.0",
+    "node-gyp-build": "^4.8.4",
+    "openai": "^6.34.0",
+    "prebuild-install": "^7.1.1",
+    "uiohook-napi": "^1.5.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "electron": "^33.4.11",
+    "electron-builder": "^26.8.1",
+    "typescript": "^5.7.0"
+  }
+}

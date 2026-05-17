@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>drifttt</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+      background: #1a1a1a;
+      color: #d0d0d0;
+      padding: 20px;
+      user-select: none;
+    }
+    .app-header { margin-bottom: 20px; }
+    .brand-logo { display: block; width: 170px; height: auto; margin-bottom: 5px; mix-blend-mode: screen; }
+    .app-header h1 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+    .app-header .tagline { font-size: 11px; color: #666; font-style: normal; letter-spacing: 0; margin-left: 13px; }
+
+    /* タブ */
+    .tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid #333; }
+    .tab {
+      padding: 8px 16px; cursor: pointer; color: #666;
+      border-bottom: 2px solid transparent; font-size: 13px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab:hover { color: #aaa; }
+    .tab.active { color: #fff; border-bottom-color: #fff; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* セクション */
+    .section { background: #222; border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+    .section h2 { font-size: 13px; font-weight: 500; margin-bottom: 10px; color: #777; text-transform: uppercase; letter-spacing: 0.5px; }
+    .beta-badge {
+      display: inline-flex; align-items: center; margin-left: 6px; padding: 1px 6px;
+      border-radius: 999px; background: #2f2f2f; color: #999;
+      font-size: 10px; font-weight: 600; letter-spacing: 0;
+      vertical-align: 1px; text-transform: none;
+    }
+    .field { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { font-size: 13px; color: #aaa; }
+    .field .desc { font-size: 11px; color: #666; margin-top: 2px; }
+    .field-col { display: flex; flex-direction: column; }
+    input[type="text"], input[type="number"] {
+      background: #2a2a2a; border: 1px solid #444; border-radius: 6px;
+      padding: 6px 10px; color: #ddd; font-size: 13px; width: 200px;
+    }
+    input[type="text"]:focus, input[type="number"]:focus { outline: none; border-color: #888; }
+
+    /* ボタン */
+    button {
+      background: #444; color: #eee; border: none; border-radius: 6px;
+      padding: 6px 14px; font-size: 12px; cursor: pointer; transition: background 0.2s;
+    }
+    button:hover { background: #555; }
+    button.danger { background: #555; color: #ccc; }
+    button.danger:hover { background: #666; }
+    button.saved { background: #2a5a2a; color: #8f8; }
+    button.primary { background: #3a3a5a; color: #aaf; }
+    button.primary:hover { background: #4a4a6a; }
+    button:disabled { background: #333; color: #555; cursor: default; }
+    button:disabled:hover { background: #333; }
+
+    /* トグル */
+    .toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle .slider {
+      position: absolute; cursor: pointer; inset: 0; background: #444;
+      border-radius: 11px; transition: 0.3s;
+    }
+    .toggle .slider:before {
+      content: ""; position: absolute; height: 16px; width: 16px;
+      left: 3px; bottom: 3px; background: #999; border-radius: 50%; transition: 0.3s;
+    }
+    .toggle input:checked + .slider { background: #666; }
+    .toggle input:checked + .slider:before { transform: translateX(18px); background: #fff; }
+
+    /* 統計カード */
+    .stats { display: flex; gap: 12px; margin-bottom: 14px; }
+    .stats.compact .stat-card { min-height: 78px; padding: 12px; }
+    .stats.compact .stat-number { font-size: 22px; }
+    .stat-card {
+      flex: 1; background: #222; border-radius: 10px; padding: 16px; text-align: center;
+      min-height: 94px; display: flex; flex-direction: column; justify-content: center;
+    }
+    .stat-number { font-size: 28px; font-weight: 700; color: #fff; }
+    .stat-label { font-size: 11px; color: #666; margin-top: 4px; }
+    .stat-note { font-size: 10px; color: #555; margin-top: 3px; }
+    .formula-note {
+      background: #1a1a1a; border-radius: 8px; padding: 10px 12px;
+      font-size: 11px; color: #666; line-height: 1.7; margin: -4px 0 14px;
+    }
+    /* 料金目安 */
+    .cost-formula {
+      background: #1a1a1a; border-radius: 8px; padding: 12px;
+      font-size: 12px; color: #aaa; line-height: 1.7;
+    }
+    .cost-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .cost-box { background: #1a1a1a; border-radius: 8px; padding: 12px; }
+    .cost-box-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.4px; }
+    .cost-box-value { font-size: 22px; color: #fff; font-weight: 700; margin-top: 4px; }
+    .cost-box-sub { font-size: 11px; color: #666; margin-top: 3px; }
+    .cost-note { font-size: 11px; color: #666; line-height: 1.7; margin-top: 10px; }
+    .cost-summary {
+      background: #1a1a1a; border-radius: 8px; padding: 10px 12px;
+      font-size: 12px; color: #aaa; line-height: 1.7; margin-top: 10px;
+    }
+    .cost-summary strong { color: #ddd; font-weight: 600; }
+    .cost-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+    .cost-table th { text-align: left; padding: 7px 8px; border-bottom: 1px solid #3a3a3a; color: #777; font-weight: 500; }
+    .cost-table td { padding: 8px; border-bottom: 1px solid #303030; color: #aaa; }
+    .cost-table .price { color: #fff; font-weight: 700; white-space: nowrap; }
+    .support-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .support-actions button { flex: 1; }
+    .support-card {
+      background: #1a1a1a; border-radius: 8px; padding: 10px 12px;
+      font-size: 12px; color: #aaa; line-height: 1.7; margin-top: 10px;
+    }
+
+    /* セットアップステップ */
+    .setup-step {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid #2a2a2a;
+    }
+    .setup-step:last-child { border-bottom: none; }
+    .step-num {
+      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600;
+    }
+    .step-num.done { background: #1a3a1a; color: #6c6; }
+    .step-num.todo { background: #3a3a1a; color: #cc6; }
+    .step-body { flex: 1; }
+    .step-title { font-size: 13px; color: #ccc; font-weight: 500; }
+    .step-desc { font-size: 11px; color: #666; margin-top: 3px; line-height: 1.5; }
+    .step-done-label { font-size: 11px; color: #6c6; margin-top: 3px; }
+
+    /* セットアップバナー */
+    .setup-banner {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #2a2a1a; border: 1px solid #3a3a2a; border-radius: 8px;
+      padding: 10px 14px; margin-bottom: 14px; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .setup-banner:hover { background: #333320; }
+    .setup-banner-text { font-size: 12px; color: #cc6; }
+    .setup-banner-arrow { font-size: 11px; color: #886; }
+
+    /* タブバッジ */
+    .tab { position: relative; }
+    .tab-badge {
+      position: absolute; top: 4px; right: 2px;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #c55; display: none;
+    }
+
+    /* 折りたたみ */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+    }
+    .section-header h2 { margin-bottom: 0; }
+    .collapse-arrow {
+      font-size: 12px; color: #555; transition: transform 0.2s;
+    }
+    .collapse-arrow.open { transform: rotate(90deg); }
+    .collapse-body {
+      overflow: hidden; transition: max-height 0.3s ease, opacity 0.2s ease;
+    }
+    .collapse-body.collapsed { max-height: 0; opacity: 0; margin-top: 0; }
+    .collapse-body.expanded { max-height: 2000px; opacity: 1; margin-top: 10px; }
+
+    /* 権限バッジ */
+    .perm-badge {
+      font-size: 11px; padding: 2px 10px; border-radius: 10px; font-weight: 500;
+    }
+    .perm-ok { background: #1a3a1a; color: #6c6; }
+    .perm-ng { background: #3a1a1a; color: #c66; }
+
+    /* テーブル */
+    .dict-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .dict-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #444; color: #666; font-weight: 500; }
+    .dict-table td { padding: 6px 8px; border-bottom: 1px solid #333; }
+    .dict-table tr:hover { background: #2a2a2a; }
+    .add-row { display: flex; gap: 8px; margin-top: 12px; }
+    .add-row input { flex: 1; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; padding: 6px 10px; color: #ddd; font-size: 13px; }
+    .add-row input:focus { outline: none; border-color: #888; }
+    .empty-state { text-align: center; padding: 24px; color: #555; font-size: 13px; }
+
+    /* 履歴 */
+    .history-item {
+      background: #2a2a2a; border-radius: 8px; padding: 10px 12px;
+      margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+    }
+    .history-text { font-size: 13px; color: #ccc; flex: 1; word-break: break-all; }
+    .history-time { font-size: 10px; color: #555; white-space: nowrap; }
+    .history-copy { flex-shrink: 0; }
+    .history-copy.copied { background: #2a5a2a; color: #bfffc0; }
+
+    /* ログ */
+    .log-area {
+      background: #111; border-radius: 8px; padding: 10px;
+      font-family: "SF Mono", Menlo, monospace; font-size: 11px;
+      color: #888; max-height: 400px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-all; line-height: 1.6;
+      user-select: text; cursor: text;
+    }
+    .review-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(10, 10, 10, 0.72);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .review-overlay.active { display: flex; }
+    .review-dialog {
+      width: 100%; max-width: 430px;
+      background: #222; border: 1px solid #333; border-radius: 12px;
+      padding: 16px; box-shadow: 0 18px 44px rgba(0,0,0,0.45);
+    }
+    .review-title { font-size: 15px; color: #fff; font-weight: 700; margin-bottom: 4px; }
+    .review-desc { font-size: 11px; color: #777; line-height: 1.6; margin-bottom: 10px; }
+    .review-editor {
+      width: 100%; height: 220px; resize: vertical; min-height: 160px; max-height: 340px;
+      background: #1a1a1a; border: 1px solid #444; border-radius: 8px;
+      color: #eee; padding: 10px 12px;
+      font: 13px/1.7 -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+      outline: none; user-select: text;
+    }
+    .review-editor:focus { border-color: #777; }
+    .review-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .review-actions button { flex: 1; }
+    .review-actions button.cancel { flex: 0 0 auto; }
+    .review-footnote { display:flex; justify-content:space-between; gap:10px; margin-top:8px; font-size:10px; color:#666; line-height:1.5; }
+    .prompt-overlay {
+      position: fixed; inset: 0; z-index: 60;
+      background: rgba(10, 10, 10, 0.72);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .prompt-overlay.active { display: flex; }
+    .prompt-dialog {
+      width: 100%; max-width: 410px;
+      background: #222; border: 1px solid #333; border-radius: 12px;
+      padding: 18px; box-shadow: 0 18px 44px rgba(0,0,0,0.45);
+    }
+    .prompt-title { font-size: 15px; color: #fff; font-weight: 700; margin-bottom: 10px; }
+    .prompt-body { font-size: 13px; color: #aaa; line-height: 1.8; }
+    .prompt-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .prompt-actions button { flex: 1; }
+    .prompt-actions button.secondary { background: #383838; color: #bbb; }
+    .prompt-actions button.secondary:hover { background: #484848; }
+  </style>
+</head>
+<body>
+  <div class="app-header">
+    <img class="brand-logo" src="../../resources/drifttt_box.png" alt="drifttt">
+    <div class="tagline">Write at the speed of thought.</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="home">ホーム</div>
+    <div class="tab" data-tab="settings">設定<span class="tab-badge" id="settings-badge"></span></div>
+    <div class="tab" data-tab="apps">アプリ別</div>
+    <div class="tab" data-tab="dictionary">辞書</div>
+    <div class="tab" data-tab="history">履歴</div>
+    <div class="tab" data-tab="log">ログ</div>
+  </div>
+
+  <!-- ホーム -->
+  <div class="panel active" id="panel-home">
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-number" id="total-words">0</div>
+        <div class="stat-label">合計認識ワード数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="total-time-saved">0m</div>
+        <div class="stat-label">合計節約時間</div>
+      </div>
+    </div>
+    <div class="stats compact">
+      <div class="stat-card">
+        <div class="stat-number" id="api-cost-estimate">¥0</div>
+        <div class="stat-label">今月のAPI料金目安</div>
+        <div class="stat-note" id="api-cost-formula">現在の設定で計算</div>
+      </div>
+    </div>
+    <div class="formula-note">
+      合計節約時間 = 手入力した場合の推定時間（認識文字数 ÷ 120字/分） - 録音時間。音声入力は手入力より速く入力できるため、毎日20〜60分の入力作業の半分を置き換えると、月4〜12時間程度の削減が目安です。
+    </div>
+    <div class="section">
+      <h2>使い方</h2>
+      <div style="font-size: 13px; color: #aaa; line-height: 1.8; margin-bottom: 12px;">
+        <strong style="color:#ddd;">⌘ を押し続けて録音、離すと文字起こし</strong><br>
+        結果はアクティブなアプリに自動ペーストされます
+      </div>
+      <div style="background:#1a1a1a; border-radius:6px; padding:10px 12px; margin-top:8px;">
+        <div style="font-size:12px; color:#aaa; line-height:1.7;">
+          <div style="margin-bottom:6px;"><strong style="color:#ddd;">通常モード</strong> — <span id="mode-ptt-key">右⌘</span> を押しながら発話</div>
+          <div style="color:#888; font-size:11px; margin-left:12px; margin-bottom:10px;">文字起こし + 辞書による軽い補正</div>
+          <div style="margin-bottom:6px;"><strong style="color:#ddd;">Composeモード</strong> — <span id="mode-modifier">右⌘ + _</span> を押しながら発話</div>
+          <div style="color:#888; font-size:11px; margin-left:12px;">考えながら喋った長文を、見出し・段落・リストで読みやすく整形</div>
+        </div>
+        <div style="font-size:11px; color:#555; margin-top:10px; border-top:1px solid #2a2a2a; padding-top:8px;">
+          キーや修飾キーは<a href="#" onclick="goToSetup();return false;" style="color:#8af; text-decoration:none;">設定画面</a>から変更できます
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>開発を支援</h2>
+      <div style="font-size:13px;color:#aaa;line-height:1.7;">
+        driftttのアプリ本体は無料でご利用いただけます。<br>
+        下記のページのリンクより、任意の金額を指定してご支援いただけます。<br>
+        コーヒー1杯分（500円）からご支援いただけると幸いです。<br>
+        アプリ、拡張機能、制作物の継続的な開発や、運営費、検証環境、公開物の保守のために使用させていただきます。<br>
+        ※お問い合わせも下記のページにて承っております。
+      </div>
+      <div class="support-actions">
+        <button class="primary" onclick="openSupportLink()">kyuu 支援ページ</button>
+      </div>
+      <div class="cost-note" id="support-copy-status"></div>
+      <div class="support-card">
+        <div style="font-size:12px;color:#aaa;margin-bottom:8px;">コードをお持ちの方</div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="supporter-code" placeholder="コードを入力" style="flex:1;width:auto;">
+          <button onclick="saveSupporterCode()">保存</button>
+        </div>
+        <div class="cost-note" id="supporter-code-status"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>ソース公開・利用条件</h2>
+      <div style="font-size:13px;color:#aaa;line-height:1.7;">
+        driftttは、ソースコードを公開しながら開発する予定です。<br>
+        ただし、オープンソースライセンスではありません。<br>
+        drifttt本体、または実質的に同じアプリの販売・有償提供・再配布は許可していません。<br>
+        APIキーを扱うアプリのため、非公式の改変版や再配布版にはご注意ください。
+      </div>
+    </div>
+
+    <!-- 初期設定バナー（未完了時） -->
+    <div class="setup-banner" id="setup-banner" onclick="goToSetup()" style="display:none;">
+      <span class="setup-banner-text" id="setup-banner-text">⚠ 初期設定が未完了です</span>
+      <span class="setup-banner-arrow">設定へ ›</span>
+    </div>
+
+    <!-- 完了後の再起動プロンプト（acknowledge前のみ） -->
+    <div class="section" id="restart-prompt" style="display:none; background:#1e3a1e; border:1px solid #2d5a2d;">
+      <div style="font-size:14px;color:#afe; margin-bottom:6px;">✅ 初期設定が完了しました！</div>
+      <div style="font-size:12px;color:#9c9; line-height:1.6; margin-bottom:12px;">
+        アクセシビリティとマイクの権限を有効にするため、<strong style="color:#cfc;">アプリを一度再起動</strong>してください。
+      </div>
+      <button class="primary" onclick="ackAndRestart()" style="width:100%;">今すぐ再起動</button>
+    </div>
+  </div>
+
+  <!-- 設定 -->
+  <div class="panel" id="panel-settings">
+    <!-- 完了後の再起動プロンプト（設定タブ用・acknowledge前のみ） -->
+    <div class="section" id="restart-prompt-settings" style="display:none; background:#1e3a1e; border:1px solid #2d5a2d;">
+      <div style="font-size:14px;color:#afe; margin-bottom:6px;">✅ 初期設定が完了しました！</div>
+      <div style="font-size:12px;color:#9c9; line-height:1.6; margin-bottom:12px;">
+        アクセシビリティとマイクの権限を有効にするため、<strong style="color:#cfc;">アプリを一度再起動</strong>してください。
+      </div>
+      <button class="primary" onclick="ackAndRestart()" style="width:100%;">今すぐ再起動</button>
+    </div>
+
+    <div class="section" id="settings-setup-section">
+      <div class="section-header" onclick="toggleSetupCollapse()">
+        <h2 style="margin-bottom:0;">初期設定 <span id="setup-done-label" style="font-size:11px;color:#6c6;font-weight:400;text-transform:none;letter-spacing:0;display:none;">— 設定完了</span></h2>
+        <span class="collapse-arrow open" id="setup-arrow">&#9654;</span>
+      </div>
+      <div class="collapse-body expanded" id="setup-collapse-body">
+
+      <div class="setup-step" id="setup-step-1">
+        <div class="step-num todo" id="step1-num">1</div>
+        <div class="step-body">
+          <div class="step-title">アクセシビリティ権限を許可</div>
+          <div class="step-desc" id="step1-desc">
+            キー入力の検知とテキスト入力に必要です。<br>
+            <strong>システム設定 → プライバシーとセキュリティ → アクセシビリティ</strong><br>
+            で drifttt を追加してください。追加後はアプリを再起動してください。
+          </div>
+          <button class="primary" id="step1-restart-btn" onclick="ackAndRestart()" style="margin-top:10px;">アクセシビリティ追加後に再起動</button>
+        </div>
+        <span class="perm-badge" id="step1-badge">確認中...</span>
+      </div>
+
+      <div class="setup-step" id="setup-step-2">
+        <div class="step-num todo" id="step2-num">2</div>
+        <div class="step-body">
+          <div class="step-title">マイク権限を許可</div>
+          <div class="step-desc" id="step2-desc">
+            音声録音に必要です。<br>
+            アプリ起動時にダイアログが出たら「許可」をクリックしてください。<br>
+            ダイアログが出ない場合はアプリを再起動してください。
+          </div>
+        </div>
+        <span class="perm-badge" id="step2-badge">確認中...</span>
+      </div>
+
+      <div class="setup-step" id="setup-step-3">
+        <div class="step-num todo" id="step3-num">3</div>
+        <div class="step-body">
+          <div class="step-title">OpenAI APIキーを設定</div>
+          <div class="step-desc" id="step3-desc">
+            無料配布版では、利用者自身のOpenAI APIキーで音声認識します。
+          </div>
+          <div style="font-size: 11px; color: #888; margin-top: 6px; line-height: 1.7; background: #1a1a1a; border-radius: 6px; padding: 10px;">
+            <strong style="color:#aaa;">APIキーの取得方法：</strong><br>
+            1. <strong>https://platform.openai.com</strong> にアクセス<br>
+            2. ログインまたはアカウント作成<br>
+            3. 左メニューの <strong>API Keys</strong> を開く<br>
+            4. <strong>Create new secret key</strong> をクリック<br>
+            5. 表示されたキー（sk-...）をコピー<br>
+            6. <strong>Billing</strong> で支払い方法を登録
+          </div>
+          <div style="font-size:11px;color:#666;margin-top:8px;line-height:1.6;">
+            料金目安: gpt-4o-mini-transcribe は録音1分あたり約0.45円（1ドル=150円換算）
+          </div>
+          <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="setup-api-key" placeholder="sk-..." style="width: 240px;">
+            <button id="setup-api-btn" onclick="saveSetupApiKey()">保存</button>
+          </div>
+        </div>
+        <span class="perm-badge" id="step3-badge">確認中...</span>
+      </div>
+
+
+      </div><!-- /collapse-body -->
+    </div>
+
+    <div class="section">
+      <h2>キー設定</h2>
+      <div class="field">
+        <div class="field-col">
+          <label>起動キー</label>
+          <div class="desc">押し続けて録音、離すと文字起こし</div>
+        </div>
+        <select id="opt-pttKey" onchange="savePttKey(this.value)" style="background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:4px 8px;color:#ddd;font-size:13px;">
+          <option value="right-cmd">右 ⌘ Command</option>
+          <option value="left-cmd">左 ⌘ Command</option>
+          <option value="right-ctrl">右 Control</option>
+          <option value="left-ctrl">左 Control</option>
+          <option value="right-shift">右 Shift</option>
+          <option value="left-shift">左 Shift</option>
+          <option value="right-alt">右 ⌥ Option</option>
+          <option value="left-alt">左 ⌥ Option</option>
+        </select>
+      </div>
+      <div style="font-size:11px;color:#555;margin-top:4px;text-align:right;">※ 変更後すぐに反映されます</div>
+
+      <div class="field" style="margin-top:12px;">
+        <div class="field-col">
+          <label>Composeモード追加キー</label>
+          <div class="desc">起動キーと一緒にこのキーも押すとComposeモード（長文を見出し・段落・リストで整形）</div>
+        </div>
+        <select id="opt-cleanupAddonKey" onchange="saveCleanupAddonKey(this.value)" style="background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:4px 8px;color:#ddd;font-size:13px;">
+          <option value="underscore">_ （アンダーバー/JIS配列）</option>
+          <option value="minus">_ （US配列：-キー+Shift）</option>
+          <option value="equal">+ （プラス）</option>
+          <option value="slash">? （クエスチョン）</option>
+          <option value="quote">" （ダブルクォート）</option>
+          <option value="semicolon">: （コロン）</option>
+          <option value="none">使わない</option>
+        </select>
+      </div>
+      <div style="font-size:11px;color:#555;margin-top:4px;text-align:right;">例: 右⌘ + _ を押しっぱなしで発話 → Composeモード</div>
+    </div>
+
+    <div class="section">
+      <h2>サウンド</h2>
+      <div class="field">
+        <div class="field-col">
+          <label>音を再生</label>
+          <div class="desc">録音開始・認識完了時に音を鳴らします</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="opt-soundEnabled" onchange="saveToggle('soundEnabled', this.checked)"><span class="slider"></span></label>
+      </div>
+      <div class="field">
+        <label>音の種類</label>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select id="opt-soundPreset" onchange="saveSoundPreset(this.value)" style="background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:4px 8px;color:#ddd;font-size:13px;">
+            <option value="1">ウッドブロック</option>
+            <option value="2">水滴</option>
+            <option value="3">ウォーム</option>
+            <option value="4">ベル</option>
+            <option value="5">ディープ水滴</option>
+            <option value="6">ノック</option>
+          </select>
+          <button onclick="previewSound()" style="padding:4px 10px;font-size:11px;">試聴</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>音量</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="range" id="opt-soundVolume" min="10" max="100" step="5" onchange="saveSoundVolume(this.value)" style="width:120px;accent-color:#888;">
+          <span id="volume-label" style="font-size:12px;color:#888;width:30px;">75%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>認識設定</h2>
+      <div class="field">
+        <div class="field-col">
+          <label>認識方式</label>
+          <div class="desc">通常はクラウド/APIキー持ち込みを推奨</div>
+        </div>
+        <select id="opt-recognitionMode" onchange="saveSelect('recognitionMode', this.value); updateRecognitionModeVisibility();" style="background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:4px 8px;color:#ddd;font-size:13px;">
+          <option value="cloud">クラウド（OpenAI APIキー持ち込み）</option>
+          <option value="local">ローカルWhisper（実験）</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-col">
+          <label>認識ヒント</label>
+          <div class="desc">音声認識に渡す文脈のヒント</div>
+        </div>
+        <select id="opt-basePrompt" onchange="saveSelect('basePrompt', this.value)" style="background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:4px 8px;color:#ddd;font-size:13px;">
+          <option value="standard">標準</option>
+          <option value="business">ビジネス</option>
+          <option value="casual">カジュアル</option>
+        </select>
+      </div>
+      <div class="field" style="margin-top:4px;">
+        <div></div>
+        <div id="prompt-preview" style="font-size:11px;color:#555;max-width:240px;text-align:right;"></div>
+      </div>
+      <div class="field cloud-model-field" style="margin-top:8px;">
+        <div class="field-col">
+          <label>クラウド認識モデル</label>
+          <div class="desc">普段使いは速度・料金重視がおすすめ</div>
+        </div>
+        <select id="opt-cloudTranscribeModel" onchange="saveSelect('cloudTranscribeModel', this.value)" style="background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:4px 8px;color:#ddd;font-size:13px;">
+          <option value="mini">速度・料金重視（gpt-4o-mini-transcribe）</option>
+          <option value="high">精度重視（gpt-4o-transcribe）</option>
+        </select>
+      </div>
+      <div class="field cloud-model-field" style="margin-top:4px;">
+        <div></div>
+        <div id="cloud-model-desc" style="font-size:11px;color:#555;max-width:260px;text-align:right;"></div>
+      </div>
+      <div class="field local-model-field" style="margin-top:8px;">
+        <div class="field-col">
+          <label>認識モデル</label>
+          <div class="desc">速度と精度のバランス</div>
+        </div>
+        <select id="opt-localModel" onchange="saveSelect('localModel', this.value)" style="background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:4px 8px;color:#ddd;font-size:13px;">
+          <option value="base">Base（最速）</option>
+          <option value="small-q4">Small q4（推奨）</option>
+          <option value="small">Small（比較用）</option>
+          <option value="medium-q4">Medium q4（比較用）</option>
+          <option value="medium-q5">Medium q5（比較用）</option>
+          <option value="kotoba-v2-q4">Kotoba v2 q4（精度確認）</option>
+          <option value="large-q4">Large q4（精度確認）</option>
+          <option value="large-q5">Large q5（重い）</option>
+          <option value="large-full">Large full（かなり重い）</option>
+        </select>
+      </div>
+      <div class="field local-model-field" style="margin-top:4px;">
+        <div></div>
+        <div id="model-desc" style="font-size:11px;color:#555;max-width:260px;text-align:right;"></div>
+      </div>
+      <div class="field" style="margin-top:8px;">
+        <div class="field-col">
+          <label>GPT後処理</label>
+          <div class="desc">最速で使うならOFF。必要な時だけ整形します</div>
+        </div>
+        <select id="opt-gptPostProcess" onchange="saveSelect('gptPostProcess', this.value)" style="background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:4px 8px;color:#ddd;font-size:13px;">
+          <option value="off">OFF（最速）</option>
+          <option value="dict-only">辞書ヒット時のみ</option>
+          <option value="always">常にON（辞書補正）</option>
+          <option value="cleanup">Composeモード（簡易整形）</option>
+        </select>
+      </div>
+      <div class="field" style="margin-top:4px;">
+        <div></div>
+        <div id="gpt-desc" style="font-size:11px;color:#555;max-width:260px;text-align:right;"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>オプション</h2>
+      <div class="field">
+        <div class="field-col">
+          <label>確認して入力</label>
+          <div class="desc">入力前にアプリ内で認識結果を修正できます</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="opt-reviewBeforeInsert" onchange="saveToggle('reviewBeforeInsert', this.checked)"><span class="slider"></span></label>
+      </div>
+      <div class="field">
+        <div class="field-col">
+          <label>修正を自動学習</label>
+          <div class="desc">同じ修正が2回出たら補正辞書に登録します</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="opt-autoLearnCorrections" onchange="saveToggle('autoLearnCorrections', this.checked)"><span class="slider"></span></label>
+      </div>
+      <div class="field">
+        <div class="field-col">
+          <label>BGオーディオミュート</label>
+          <div class="desc">録音中にバックグラウンドの音声をミュートします</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="opt-backgroundMute" onchange="saveToggle('backgroundMute', this.checked)"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>API料金シミュレーター</h2>
+      <div class="cost-formula" style="margin-bottom:12px;">
+        driftttはアプリ本体を無料で配布し、音声認識APIの料金は利用者自身のOpenAIアカウントに直接発生します。<br>
+        <strong style="color:#ddd;">速度・料金重視 + GPT後処理OFF</strong> の場合は <strong style="color:#ddd;">録音分数 × $0.003</strong> が目安です。<br>
+        精度重視モデルは <strong style="color:#ddd;">録音分数 × $0.006</strong>、GPT後処理ONでは追加のテキスト処理料金が少し加わります。
+      </div>
+      <div class="field">
+        <div class="field-col">
+          <label>月の録音分数</label>
+          <div class="desc">自分のOpenAI APIキーで使う場合の概算</div>
+        </div>
+        <input type="number" id="cost-minutes-input" min="0" step="10" value="500" oninput="updateCostSimulator()">
+      </div>
+      <div class="field" style="margin-top:8px;">
+        <div class="field-col">
+          <label>音声認識モデル</label>
+          <div class="desc">OpenAI公式の分単価をもとに計算</div>
+        </div>
+        <select id="cost-model-input" onchange="updateCostSimulator()" style="background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:4px 8px;color:#ddd;font-size:13px;">
+          <option value="mini">速度・料金重視（gpt-4o-mini-transcribe）</option>
+          <option value="high">精度重視（gpt-4o-transcribe）</option>
+        </select>
+      </div>
+      <div class="field" style="margin-top:8px;">
+        <div class="field-col">
+          <label>GPT後処理</label>
+          <div class="desc">OFFが最安。Composeは長文整形用</div>
+        </div>
+        <select id="cost-postprocess-input" onchange="updateCostSimulator()" style="background:#2a2a2a;border:1px solid #444;border-radius:6px;padding:4px 8px;color:#ddd;font-size:13px;">
+          <option value="off">OFF（最速）</option>
+          <option value="dict-only">辞書ヒット時のみ</option>
+          <option value="always">常にON（辞書補正）</option>
+          <option value="cleanup">Composeモード</option>
+        </select>
+      </div>
+      <div class="cost-summary" id="sim-cost-summary"></div>
+      <div class="cost-grid">
+        <div class="cost-box">
+          <div class="cost-box-label" id="sim-api-cost-label">API代</div>
+          <div class="cost-box-value" id="sim-api-cost">約¥225</div>
+          <div class="cost-box-sub" id="sim-usd-cost">$1.50</div>
+        </div>
+        <div class="cost-box">
+          <div class="cost-box-label">1分あたり</div>
+          <div class="cost-box-value" id="sim-per-minute">約¥0.45</div>
+          <div class="cost-box-sub">選択中の構成で計算</div>
+        </div>
+      </div>
+      <table class="cost-table">
+        <thead>
+          <tr><th>使い方</th><th>構成</th><th>月額目安</th></tr>
+        </thead>
+        <tbody id="cost-combo-rows"></tbody>
+      </table>
+      <div class="cost-note">
+        GPT後処理の料金は、録音1分あたり入力300トークン・出力220トークン程度として概算しています。辞書ヒット時のみは、録音の10%だけ後処理される想定です。
+      </div>
+    </div>
+  </div>
+
+  <!-- アプリ別プロンプト -->
+  <div class="panel" id="panel-apps">
+    <div class="section">
+      <h2>アプリ別プロンプト<span class="beta-badge">Beta</span></h2>
+      <p style="font-size: 12px; color: #666; margin-bottom: 12px;">
+        まだ検証中の機能です。アプリによっては期待通りに効かない場合があります。<br>
+        前面アプリの名前が一致した時だけ、音声認識に追加ヒントを渡します。<br>
+        「3秒後に取得」を押してから、対象アプリをクリックしてください。
+      </p>
+      <div style="background:#1a1a1a;border-radius:8px;padding:10px 12px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div>
+            <div style="font-size:11px;color:#666;">現在の前面アプリ</div>
+            <div id="current-app-name" style="font-size:13px;color:#ddd;margin-top:2px;">未取得</div>
+          </div>
+          <button id="capture-app-btn" onclick="captureAppNameAfterDelay()">3秒後に取得して入力</button>
+        </div>
+      </div>
+      <div id="app-prompt-list"></div>
+      <div class="add-row">
+        <input type="text" id="new-app-name" placeholder="アプリ名">
+        <input type="text" id="new-app-prompt" placeholder="ヒント（例: 社内チャット）" style="flex:2;">
+        <button onclick="addAppPrompt()">追加</button>
+      </div>
+    </div>
+    <div class="section">
+      <h2>よく使うアプリ名</h2>
+      <p style="font-size: 11px; color: #555; line-height: 1.6;">
+        Slack, Google Chrome, Safari, Microsoft Outlook,<br>
+        Notion, Figma, Visual Studio Code, Terminal,<br>
+        Microsoft Teams, zoom.us, LINE, Discord
+      </p>
+    </div>
+  </div>
+
+  <!-- 辞書 -->
+  <div class="panel" id="panel-dictionary">
+    <div class="section">
+      <h2>カスタム辞書<span class="beta-badge">Beta</span></h2>
+      <p style="font-size: 12px; color: #666; margin-bottom: 12px;">
+        まだ検証中の機能です。誤認識の改善を保証するものではありません。<br>
+        誤認識テキスト → 正しいテキストのペアを登録します<br>
+        登録した語はローカル認識のヒントとして使われます。<br>
+        語数が多いと認識速度に影響する場合があります。
+      </p>
+      <div id="dict-count" style="font-size:11px;color:#555;margin-bottom:8px;"></div>
+      <div id="dict-list"></div>
+      <div class="add-row">
+        <input type="text" id="new-wrong" placeholder="誤認識（例: サンプルしゃ）">
+        <input type="text" id="new-correct" placeholder="正しい表記（例: サンプル社）">
+        <button onclick="addDictEntry()">追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 履歴 -->
+  <div class="panel" id="panel-history">
+    <div class="section">
+      <h2>最近の文字起こし</h2>
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <!-- ログ -->
+  <div class="panel" id="panel-log">
+    <div class="section">
+      <h2>アプリログ</h2>
+      <p style="font-size: 12px; color: #666; margin-bottom: 12px;">
+        動作状況やエラーを確認できます。お問い合わせ時に、必要に応じてこのログの内容を共有してください。APIキーは表示されません。
+      </p>
+      <div class="log-area" id="log-area">読み込み中...</div>
+      <div style="margin-top: 10px; display: flex; gap: 8px;">
+        <button onclick="loadLogs()">更新</button>
+        <button class="danger" onclick="clearLogs()">クリア</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="review-overlay" id="review-overlay">
+    <div class="review-dialog">
+      <div class="review-title">入力前に確認</div>
+      <div class="review-desc">誤変換を直してから入力できます。同じ修正が2回出ると、補正辞書に自動登録されます。</div>
+      <textarea class="review-editor" id="review-editor" spellcheck="false"></textarea>
+      <div class="review-actions">
+        <button class="primary" onclick="finishCorrectionReview('copy')">コピー</button>
+        <button class="cancel" onclick="finishCorrectionReview('cancel')">閉じる</button>
+      </div>
+      <div class="review-footnote">
+        <span>コピー後は入力先のアプリで⌘Vしてください。この確認画面は 設定 → オプション → 確認して入力 からオフにできます。</span>
+        <span id="review-count">0文字</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="prompt-overlay" id="support-prompt-overlay">
+    <div class="prompt-dialog">
+      <div class="prompt-title">driftttは業務効率化にお役立ちできますでしょうか。</div>
+      <div class="prompt-body">
+        これまでに約<span id="support-saved-hours">1</span>時間 の入力時間を節約できました。<br>
+        driftttは無料で利用いただけますが、<br>
+        開発・検証・サポート費用などは継続的に発生しています。<br><br>
+        よければ、コーヒー1杯分から開発を支援していただけると嬉しいです。
+      </div>
+      <div class="prompt-actions">
+        <button class="primary" onclick="supportPromptOpen()">開発を支援する</button>
+        <button class="secondary" onclick="supportPromptLater()">今はしない</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="prompt-overlay" id="update-prompt-overlay">
+    <div class="prompt-dialog">
+      <div class="prompt-title" id="update-title">新しいバージョンがあります</div>
+      <div class="prompt-body">
+        <div id="update-message">driftttの新しいバージョンが公開されています。</div>
+        <div style="font-size:11px;color:#666;margin-top:8px;" id="update-version-label"></div>
+      </div>
+      <div class="prompt-actions">
+        <button class="primary" onclick="updatePromptOpen()">ダウンロードページを開く</button>
+        <button class="secondary" onclick="updatePromptLater()">あとで</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const electron = (() => {
+      try { return require('electron'); } catch { return { ipcRenderer: null, clipboard: null }; }
+    })();
+    const { ipcRenderer, clipboard } = electron;
+    const SUPPORT_URL = 'https://3plus6.jp/support.html';
+    let pendingSupportPrompt = null;
+    let pendingUpdatePrompt = null;
+
+    function openTab(tabName, updateHash = false) {
+      const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+      const panel = document.getElementById('panel-' + tabName);
+      if (!tab || !panel) return;
+
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      panel.classList.add('active');
+      if (updateHash) history.replaceState(null, '', '#' + tabName);
+
+      if (tabName === 'history') loadHistory();
+      if (tabName === 'home') { loadStats(); updateSetupStatus(); updateModeLabels(); }
+      if (tabName === 'settings') { updateSetupSteps(); updateSetupStatus(); }
+      if (tabName === 'apps') loadAppPrompts();
+      if (tabName === 'log') loadLogs();
+    }
+
+    // タブ
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        openTab(tab.dataset.tab, true);
+      });
+    });
+
+    if (ipcRenderer) {
+      ipcRenderer.on('switch-tab', (_event, tab) => {
+        openTab(tab, true);
+      });
+
+      ipcRenderer.on('dictionary-updated', () => {
+        loadDictionary();
+      });
+
+      ipcRenderer.on('open-correction-review', (_event, text) => {
+        openCorrectionReview(text || '');
+      });
+
+      ipcRenderer.on('show-support-prompt', (_event, payload) => {
+        showSupportPrompt(payload || {});
+      });
+
+      ipcRenderer.on('show-update-prompt', (_event, payload) => {
+        showUpdatePrompt(payload || {});
+      });
+    }
+
+    // マイク権限をWebAPIで要求
+    async function requestMicFromRenderer() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(t => t.stop());
+        ipcRenderer.invoke('mic-permission-granted');
+      } catch (e) {
+        console.log('[Renderer] マイク権限取得失敗:', e.message);
+      }
+    }
+
+    // セットアップ状態を取得
+    async function getSetupState() {
+      const status = await ipcRenderer.invoke('get-permission-status');
+      const engine = await ipcRenderer.invoke('get-local-engine-status');
+      const config = await ipcRenderer.invoke('get-config');
+      const cloudMode = (config.recognitionMode || 'cloud') === 'cloud';
+      return {
+        accessibility: status.accessibility,
+        microphone: status.microphone === 'granted',
+        apiKey: !!config.openaiApiKey,
+        cloudMode,
+        localEngine: !!engine.available,
+        keyListenerReady: !!status.keyListenerReady,
+      };
+    }
+
+    // ホーム画面のバナー＆タブバッジ更新
+    async function updateSetupStatus() {
+      const state = await getSetupState();
+      const config = await ipcRenderer.invoke('get-config');
+      const engineReady = state.cloudMode ? state.apiKey : state.localEngine;
+      const allDone = state.accessibility && state.microphone && engineReady;
+      const acknowledged = !!config.setupAcknowledged;
+      const needsRestart = allDone && !state.keyListenerReady;
+      const banner = document.getElementById('setup-banner');
+      const badge = document.getElementById('settings-badge');
+      const restartPrompt = document.getElementById('restart-prompt');
+      const restartPromptSettings = document.getElementById('restart-prompt-settings');
+
+      if (allDone && (!acknowledged || needsRestart)) {
+        // 完了したがまだ再起動していない → 再起動プロンプト表示
+        banner.style.display = 'none';
+        badge.style.display = 'block';
+        restartPrompt.style.display = '';
+        if (restartPromptSettings) restartPromptSettings.style.display = '';
+      } else if (allDone && acknowledged && state.keyListenerReady) {
+        // 完了＋再起動済み → すべて非表示
+        banner.style.display = 'none';
+        badge.style.display = 'none';
+        restartPrompt.style.display = 'none';
+        if (restartPromptSettings) restartPromptSettings.style.display = 'none';
+      } else {
+        // 未完了
+        const remaining = [state.accessibility, state.microphone, engineReady].filter(x => !x).length;
+        document.getElementById('setup-banner-text').textContent = '⚠ 初期設定が未完了です（残り' + remaining + '項目）';
+        banner.style.display = '';
+        badge.style.display = 'block';
+        restartPrompt.style.display = 'none';
+        if (restartPromptSettings) restartPromptSettings.style.display = 'none';
+      }
+    }
+
+    async function ackSetup() {
+      await ipcRenderer.invoke('set-config', 'setupAcknowledged', true);
+      updateSetupStatus();
+      updateSetupSteps();
+    }
+
+    async function ackAndRestart() {
+      // クリックだけでは acknowledged=true にしない。実際の再起動後に main 側で promote される
+      await ipcRenderer.invoke('set-config', 'pendingRestartAck', true);
+      ipcRenderer.invoke('restart-app');
+    }
+
+    // 設定画面のセットアップステップ更新
+    async function updateSetupSteps() {
+      const state = await getSetupState();
+      const config = await ipcRenderer.invoke('get-config');
+
+      // Step 1: アクセシビリティ
+      const s1num = document.getElementById('step1-num');
+      const s1badge = document.getElementById('step1-badge');
+      const s1RestartBtn = document.getElementById('step1-restart-btn');
+      if (state.accessibility) {
+        s1num.className = 'step-num done'; s1num.innerHTML = '&#10003;';
+        s1badge.className = state.keyListenerReady ? 'perm-badge perm-ok' : 'perm-badge perm-ng';
+        s1badge.textContent = state.keyListenerReady ? 'OK' : '再起動';
+        if (s1RestartBtn) s1RestartBtn.style.display = state.keyListenerReady ? 'none' : '';
+      } else {
+        s1num.className = 'step-num todo'; s1num.textContent = '1';
+        s1badge.className = 'perm-badge perm-ng'; s1badge.textContent = '未許可';
+        if (s1RestartBtn) s1RestartBtn.style.display = '';
+      }
+
+      // Step 2: マイク
+      const s2num = document.getElementById('step2-num');
+      const s2badge = document.getElementById('step2-badge');
+      if (state.microphone) {
+        s2num.className = 'step-num done'; s2num.innerHTML = '&#10003;';
+        s2badge.className = 'perm-badge perm-ok'; s2badge.textContent = 'OK';
+      } else {
+        s2num.className = 'step-num todo'; s2num.textContent = '2';
+        s2badge.className = 'perm-badge perm-ng'; s2badge.textContent = '未許可';
+      }
+
+      // Step 3: APIキーまたはローカル音声認識エンジン
+      const s3num = document.getElementById('step3-num');
+      const s3badge = document.getElementById('step3-badge');
+      const setupKeyInput = document.getElementById('setup-api-key');
+      const engineReady = state.cloudMode ? state.apiKey : state.localEngine;
+      if (engineReady) {
+        s3num.className = 'step-num done'; s3num.innerHTML = '&#10003;';
+        s3badge.className = 'perm-badge perm-ok'; s3badge.textContent = state.cloudMode ? '設定済み' : 'OK';
+        if (config.openaiApiKey && setupKeyInput) setupKeyInput.value = config.openaiApiKey;
+      } else {
+        s3num.className = 'step-num todo'; s3num.textContent = '3';
+        s3badge.className = 'perm-badge perm-ng'; s3badge.textContent = state.cloudMode ? '未設定' : '未検出';
+      }
+
+      // 全部完了＋再起動済みなら初期設定を折りたたむ
+      const collapseBody = document.getElementById('setup-collapse-body');
+      const collapseArrow = document.getElementById('setup-arrow');
+      const doneLabel = document.getElementById('setup-done-label');
+      const allDone = state.accessibility && state.microphone && engineReady;
+      const acknowledged = !!config.setupAcknowledged;
+      if (allDone && acknowledged && state.keyListenerReady) {
+        collapseBody.classList.remove('expanded');
+        collapseBody.classList.add('collapsed');
+        collapseArrow.classList.remove('open');
+        doneLabel.style.display = 'inline';
+      } else {
+        collapseBody.classList.remove('collapsed');
+        collapseBody.classList.add('expanded');
+        collapseArrow.classList.add('open');
+        doneLabel.style.display = 'none';
+      }
+    }
+
+    function toggleSetupCollapse() {
+      const body = document.getElementById('setup-collapse-body');
+      const arrow = document.getElementById('setup-arrow');
+      if (body.classList.contains('expanded')) {
+        body.classList.remove('expanded');
+        body.classList.add('collapsed');
+        arrow.classList.remove('open');
+      } else {
+        body.classList.remove('collapsed');
+        body.classList.add('expanded');
+        arrow.classList.add('open');
+      }
+    }
+
+    function goToSetup() {
+      // 設定タブに切り替え
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'settings'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-settings').classList.add('active');
+      updateSetupSteps();
+      updateSetupStatus();
+    }
+
+    async function saveSetupApiKey() {
+      const key = document.getElementById('setup-api-key').value.trim();
+      if (!key) return;
+      const prev = await ipcRenderer.invoke('get-config');
+      const wasEmpty = !prev.openaiApiKey;
+      await ipcRenderer.invoke('set-config', 'openaiApiKey', key);
+      await ipcRenderer.invoke('set-config', 'recognitionMode', 'cloud');
+      if (wasEmpty) {
+        await ipcRenderer.invoke('set-config', 'setupAcknowledged', false);
+      }
+      const btn = document.getElementById('setup-api-btn');
+      btn.textContent = '保存済み';
+      btn.classList.add('saved');
+      document.getElementById('opt-recognitionMode').value = 'cloud';
+      updateRecognitionModeVisibility();
+      updateSetupSteps();
+      updateSetupStatus();
+    }
+
+    // 初期化
+    async function init() {
+      if (!ipcRenderer) {
+        openTab((location.hash || '#home').replace('#', ''), false);
+        return;
+      }
+      const config = await ipcRenderer.invoke('get-config');
+      if (config.openaiApiKey) {
+        document.getElementById('setup-api-key').value = config.openaiApiKey;
+        const setupBtn = document.getElementById('setup-api-btn');
+        setupBtn.textContent = '保存済み';
+        setupBtn.classList.add('saved');
+      }
+      if (config.supporterCode) {
+        document.getElementById('supporter-code').value = config.supporterCode;
+        document.getElementById('supporter-code-status').textContent = 'コードを保存しました。以降ご支援依頼のポップアップは表示されません。ご支援いただき、ありがとうございました。';
+      }
+
+      document.getElementById('opt-pttKey').value = config.pttKey || 'right-cmd';
+      document.getElementById('opt-cleanupAddonKey').value = config.cleanupAddonKey || 'underscore';
+      document.getElementById('opt-soundEnabled').checked = config.soundEnabled !== false;
+      document.getElementById('opt-soundPreset').value = config.soundPreset || '5';
+      document.getElementById('opt-soundVolume').value = config.soundVolume || 75;
+      document.getElementById('volume-label').textContent = (config.soundVolume || 75) + '%';
+      document.getElementById('opt-backgroundMute').checked = config.backgroundMute || false;
+      document.getElementById('opt-recognitionMode').value = config.recognitionMode || 'cloud';
+      document.getElementById('opt-cloudTranscribeModel').value = config.cloudTranscribeModel || 'mini';
+      document.getElementById('opt-basePrompt').value = config.basePrompt || 'standard';
+      document.getElementById('opt-localModel').value = config.localModel || 'small-q4';
+      document.getElementById('opt-gptPostProcess').value = config.gptPostProcess || 'off';
+      document.getElementById('opt-reviewBeforeInsert').checked = config.reviewBeforeInsert !== false;
+      document.getElementById('opt-autoLearnCorrections').checked = config.autoLearnCorrections !== false;
+      updatePromptPreview();
+      updateCloudModelDesc();
+      updateModelDesc();
+      updateGptDesc();
+      updateRecognitionModeVisibility();
+      updateCostSimulator();
+
+      loadStats();
+      loadDictionary();
+      updateSetupStatus();
+      updateModeLabels();
+
+      // マイク権限が未取得のときだけ、WebAPIでダイアログを出す（許可済みなら毎回呼ばない）
+      const status = await ipcRenderer.invoke('get-permission-status');
+      if (status.microphone !== 'granted') {
+        requestMicFromRenderer();
+      }
+    }
+
+    // キーラベル表示（ホームの使い方）
+    const pttKeyLabels = {
+      'right-cmd': '右⌘', 'left-cmd': '左⌘',
+      'right-ctrl': '右Ctrl', 'left-ctrl': '左Ctrl',
+      'right-shift': '右Shift', 'left-shift': '左Shift',
+      'right-alt': '右⌥', 'left-alt': '左⌥',
+    };
+    // Shift必須なのでShift側の文字を表示
+    // Shift必須。ユーザーから見た「Shift押した時の文字」を表示
+    const addonKeyLabels = {
+      'underscore': '_', 'minus': '_', 'equal': '+', 'slash': '?', 'quote': '"', 'semicolon': ':', 'none': '—',
+    };
+    async function updateModeLabels() {
+      const c = await ipcRenderer.invoke('get-config');
+      const ptt = pttKeyLabels[c.pttKey] || '右⌘';
+      const addon = addonKeyLabels[c.cleanupAddonKey] || '_';
+      document.getElementById('mode-ptt-key').textContent = ptt;
+      document.getElementById('mode-modifier').textContent = ptt + ' + ' + addon;
+    }
+
+    const COST_EXCHANGE_RATE_JPY = 150;
+    const TRANSCRIBE_RATES = {
+      mini: { usdPerMinute: 0.003, label: 'gpt-4o-mini-transcribe', displayName: '速度・料金重視' },
+      high: { usdPerMinute: 0.006, label: 'gpt-4o-transcribe', displayName: '精度重視' },
+    };
+    const POSTPROCESS_RATES = {
+      off: { label: 'OFF', coverage: 0, model: null, inputPerMin: 0, outputPerMin: 0 },
+      'dict-only': { label: '辞書ヒット時のみ', coverage: 0.1, model: 'gpt-4o-mini', inputPerMin: 300, outputPerMin: 220 },
+      always: { label: '常にON', coverage: 1, model: 'gpt-4o-mini', inputPerMin: 300, outputPerMin: 220 },
+      cleanup: { label: 'Compose', coverage: 1, model: 'gpt-4o', inputPerMin: 450, outputPerMin: 320 },
+    };
+    const TEXT_MODEL_RATES = {
+      'gpt-4o-mini': { inputPerMillion: 0.15, outputPerMillion: 0.60 },
+      'gpt-4o': { inputPerMillion: 2.50, outputPerMillion: 10.00 },
+    };
+
+    function yen(amount) {
+      return '¥' + Math.round(amount).toLocaleString();
+    }
+
+    function formatDuration(minutes) {
+      if (minutes < 60) return Math.round(minutes) + 'm';
+      const hours = Math.floor(minutes / 60);
+      const mins = Math.round(minutes % 60);
+      return hours + 'h ' + mins + 'm';
+    }
+
+    function estimateSavedMinutes(chars, audioSeconds) {
+      const estimatedTypingMinutes = (chars || 0) / 120;
+      const actualSpeakingMinutes = (audioSeconds || 0) / 60;
+      return Math.max(0, estimatedTypingMinutes - actualSpeakingMinutes);
+    }
+
+    function estimatePostProcessUsd(minutes, modeKey) {
+      const mode = POSTPROCESS_RATES[modeKey] || POSTPROCESS_RATES.off;
+      if (!mode.model || mode.coverage <= 0) return 0;
+      const rate = TEXT_MODEL_RATES[mode.model];
+      const billableMinutes = minutes * mode.coverage;
+      const inputCost = (billableMinutes * mode.inputPerMin / 1000000) * rate.inputPerMillion;
+      const outputCost = (billableMinutes * mode.outputPerMin / 1000000) * rate.outputPerMillion;
+      return inputCost + outputCost;
+    }
+
+    function estimateTotalUsd(minutes, transcribeKey, postprocessKey) {
+      const sttRate = TRANSCRIBE_RATES[transcribeKey] || TRANSCRIBE_RATES.mini;
+      return (minutes * sttRate.usdPerMinute) + estimatePostProcessUsd(minutes, postprocessKey);
+    }
+
+    function getConfiguredCost(config, minutes) {
+      if ((config.recognitionMode || 'cloud') === 'local') {
+        return {
+          usd: 0,
+          formula: 'ローカル認識のため音声認識API代は¥0',
+        };
+      }
+      const modelKey = config.cloudTranscribeModel || 'mini';
+      const postprocessKey = config.gptPostProcess || 'off';
+      const rate = TRANSCRIBE_RATES[modelKey] || TRANSCRIBE_RATES.mini;
+      const postprocess = POSTPROCESS_RATES[postprocessKey] || POSTPROCESS_RATES.off;
+      return {
+        usd: estimateTotalUsd(minutes, modelKey, postprocessKey),
+        formula: `${rate.displayName} $${rate.usdPerMinute.toFixed(3)}/分 + GPT後処理 ${postprocess.label}`,
+      };
+    }
+
+    async function loadStats() {
+      const stats = await ipcRenderer.invoke('get-stats');
+      const config = await ipcRenderer.invoke('get-config');
+      document.getElementById('total-words').textContent = (stats.totalWords || 0).toLocaleString();
+
+      const totalSavedMinutes = estimateSavedMinutes(stats.totalChars || 0, stats.totalAudioSeconds || 0);
+      document.getElementById('total-time-saved').textContent = formatDuration(totalSavedMinutes);
+
+      const audioMinutes = (stats.monthlyAudioSeconds || 0) / 60;
+      const configuredCost = getConfiguredCost(config, audioMinutes);
+      document.getElementById('api-cost-estimate').textContent = yen(configuredCost.usd * COST_EXCHANGE_RATE_JPY);
+      document.getElementById('api-cost-formula').textContent = configuredCost.formula;
+    }
+
+    function updateCostSimulator() {
+      const minutes = Math.max(0, Number(document.getElementById('cost-minutes-input')?.value || 0));
+      const modelKey = document.getElementById('cost-model-input')?.value || 'mini';
+      const postprocessKey = document.getElementById('cost-postprocess-input')?.value || 'off';
+      const rate = TRANSCRIBE_RATES[modelKey] || TRANSCRIBE_RATES.mini;
+      const postprocess = POSTPROCESS_RATES[postprocessKey] || POSTPROCESS_RATES.off;
+      const usd = estimateTotalUsd(minutes, modelKey, postprocessKey);
+      const jpy = usd * COST_EXCHANGE_RATE_JPY;
+      const perMinuteJpy = estimateTotalUsd(1, modelKey, postprocessKey) * COST_EXCHANGE_RATE_JPY;
+      document.getElementById('sim-cost-summary').innerHTML =
+        `<strong>${rate.displayName}</strong>（${rate.label}） + <strong>GPT後処理 ${postprocess.label}</strong> で、${minutes.toLocaleString()}分/月を計算しています。`;
+      document.getElementById('sim-api-cost-label').textContent = `${rate.displayName} + ${postprocess.label}`;
+      document.getElementById('sim-api-cost').textContent = '約' + yen(jpy);
+      document.getElementById('sim-usd-cost').textContent = '$' + usd.toFixed(2) + ' / ' + rate.label + ' + GPT後処理 ' + postprocess.label;
+      document.getElementById('sim-per-minute').textContent = '約¥' + perMinuteJpy.toFixed(2);
+
+      const combos = [
+        { name: '最速・普段使い', model: 'mini', post: 'off', config: 'mini + 後処理OFF' },
+        { name: '辞書だけ補正', model: 'mini', post: 'dict-only', config: 'mini + 辞書ヒット時のみ' },
+        { name: '認識精度重視', model: 'high', post: 'off', config: 'high + 後処理OFF' },
+        { name: '整形まで任せる', model: 'mini', post: 'cleanup', config: 'mini + Compose' },
+      ];
+      document.getElementById('cost-combo-rows').innerHTML = combos.map(combo => {
+        const comboUsd = estimateTotalUsd(minutes, combo.model, combo.post);
+        return `<tr><td>${combo.name}</td><td>${combo.config}</td><td class="price">約${yen(comboUsd * COST_EXCHANGE_RATE_JPY)}</td></tr>`;
+      }).join('');
+    }
+
+    async function loadDictionary() {
+      const entries = await ipcRenderer.invoke('get-dictionary');
+      const candidates = await ipcRenderer.invoke('get-correction-candidates');
+      const container = document.getElementById('dict-list');
+      const countEl = document.getElementById('dict-count');
+      const realEntries = entries.filter(e => e.wrong_reading !== e.correct_text);
+      countEl.textContent = `現在 ${realEntries.length} 語登録中 / 学習候補 ${candidates.length} 件`;
+      if (entries.length === 0) {
+        container.innerHTML = '<div class="empty-state">辞書は空です</div>';
+        return;
+      }
+      let html = '<table class="dict-table"><tr><th>誤認識</th><th>正しい表記</th><th></th></tr>';
+      for (const entry of entries) {
+        if (entry.wrong_reading === entry.correct_text) continue;
+        html += '<tr><td>' + esc(entry.wrong_reading) + '</td><td>' + esc(entry.correct_text) + '</td><td><button class="danger" onclick="removeDictEntry(' + entry.id + ')" style="padding:3px 8px;font-size:11px;">削除</button></td></tr>';
+      }
+      html += '</table>';
+      container.innerHTML = html;
+    }
+
+    async function addDictEntry() {
+      const w = document.getElementById('new-wrong'), c = document.getElementById('new-correct');
+      if (!w.value.trim() || !c.value.trim()) return;
+      await ipcRenderer.invoke('add-dictionary', w.value.trim(), c.value.trim());
+      w.value = ''; c.value = '';
+      loadDictionary();
+    }
+
+    async function removeDictEntry(id) {
+      await ipcRenderer.invoke('remove-dictionary', id);
+      loadDictionary();
+    }
+
+    async function loadHistory() {
+      const history = await ipcRenderer.invoke('get-history');
+      const container = document.getElementById('history-list');
+      if (history.length === 0) {
+        container.innerHTML = '<div class="empty-state">まだ履歴がありません</div>';
+        return;
+      }
+      let html = '';
+      for (const item of history) {
+        const date = new Date(item.timestamp);
+        const time = date.getHours() + ':' + String(date.getMinutes()).padStart(2, '0');
+        const sec = item.elapsedMs ? (item.elapsedMs / 1000).toFixed(1) + 's' : '';
+        html += '<div class="history-item"><div class="history-text">' + esc(item.text) + '</div><span class="history-time">' + (sec ? sec + ' / ' : '') + time + '</span><button class="history-copy" onclick="copyText(this, \'' + esc(item.text).replace(/'/g, "\\'") + '\')">コピー</button></div>';
+      }
+      container.innerHTML = html;
+    }
+
+    function copyText(buttonOrText, maybeText) {
+      const button = typeof maybeText === 'string' ? buttonOrText : null;
+      const text = typeof maybeText === 'string' ? maybeText : buttonOrText;
+      clipboard.writeText(text);
+      if (button) {
+        const previous = button.textContent;
+        button.textContent = 'コピー済み';
+        button.classList.add('copied');
+        button.disabled = true;
+        setTimeout(() => {
+          button.textContent = previous;
+          button.classList.remove('copied');
+          button.disabled = false;
+        }, 1200);
+      }
+    }
+
+    function openCorrectionReview(text) {
+      const overlay = document.getElementById('review-overlay');
+      const editor = document.getElementById('review-editor');
+      editor.value = text;
+      updateReviewCount();
+      overlay.classList.add('active');
+      setTimeout(() => {
+        editor.focus();
+        editor.setSelectionRange(editor.value.length, editor.value.length);
+      }, 50);
+    }
+
+    function finishCorrectionReview(action) {
+      const overlay = document.getElementById('review-overlay');
+      const editor = document.getElementById('review-editor');
+      overlay.classList.remove('active');
+      ipcRenderer.send('correction-review-result', {
+        action,
+        text: editor.value || '',
+      });
+    }
+
+    function updateReviewCount() {
+      document.getElementById('review-count').textContent = Array.from(document.getElementById('review-editor').value || '').length + '文字';
+    }
+
+    function openSupportLink() {
+      if (ipcRenderer) {
+        ipcRenderer.invoke('open-support-url', 0);
+      } else {
+        const { shell } = require('electron');
+        shell.openExternal(SUPPORT_URL);
+      }
+      document.getElementById('support-copy-status').textContent = '応援ページを開きました。ありがとうございます。';
+    }
+
+    async function saveSupporterCode() {
+      const input = document.getElementById('supporter-code');
+      const status = document.getElementById('supporter-code-status');
+      const code = input.value.trim();
+      if (!ipcRenderer) return;
+      const result = await ipcRenderer.invoke('save-supporter-code', code);
+      if (result.ok && result.cleared) {
+        status.textContent = 'コードを解除しました。';
+      } else if (result.ok) {
+        status.textContent = 'コードを保存しました。以降ご支援依頼のポップアップは表示されません。ご支援いただき、ありがとうございました。';
+      } else {
+        status.textContent = 'コードが違います。入力内容をご確認ください。';
+      }
+    }
+
+    function formatSupportHours(hours) {
+      return Math.max(1, Math.round(Number(hours) || 0)).toLocaleString();
+    }
+
+    function showSupportPrompt(payload) {
+      pendingSupportPrompt = {
+        thresholdHours: Number(payload.thresholdHours || 0),
+        savedHours: Number(payload.savedHours || payload.thresholdHours || 0),
+      };
+      document.getElementById('support-saved-hours').textContent = formatSupportHours(pendingSupportPrompt.savedHours);
+      document.getElementById('support-prompt-overlay').classList.add('active');
+    }
+
+    async function supportPromptOpen() {
+      const payload = pendingSupportPrompt || {};
+      document.getElementById('support-prompt-overlay').classList.remove('active');
+      if (ipcRenderer) await ipcRenderer.invoke('open-support-url', payload.thresholdHours || 0);
+      pendingSupportPrompt = null;
+    }
+
+    async function supportPromptLater() {
+      const payload = pendingSupportPrompt || {};
+      document.getElementById('support-prompt-overlay').classList.remove('active');
+      if (ipcRenderer) await ipcRenderer.invoke('dismiss-support-prompt', payload.thresholdHours || 0);
+      pendingSupportPrompt = null;
+    }
+
+    function showUpdatePrompt(payload) {
+      pendingUpdatePrompt = {
+        latestVersion: String(payload.latestVersion || ''),
+        downloadUrl: payload.downloadUrl || SUPPORT_URL,
+      };
+      document.getElementById('update-title').textContent = payload.title || '新しいバージョンがあります';
+      document.getElementById('update-message').textContent = payload.message || 'driftttの新しいバージョンが公開されています。';
+      document.getElementById('update-version-label').textContent =
+        `現在: v${payload.currentVersion || '-'} / 最新: v${pendingUpdatePrompt.latestVersion || '-'}`;
+      document.getElementById('update-prompt-overlay').classList.add('active');
+    }
+
+    async function updatePromptOpen() {
+      const payload = pendingUpdatePrompt || {};
+      document.getElementById('update-prompt-overlay').classList.remove('active');
+      if (ipcRenderer) await ipcRenderer.invoke('open-update-url', payload.latestVersion || '', payload.downloadUrl || SUPPORT_URL);
+      pendingUpdatePrompt = null;
+    }
+
+    async function updatePromptLater() {
+      const payload = pendingUpdatePrompt || {};
+      document.getElementById('update-prompt-overlay').classList.remove('active');
+      if (ipcRenderer) await ipcRenderer.invoke('snooze-update-prompt', payload.latestVersion || '');
+      pendingUpdatePrompt = null;
+    }
+
+    function saveToggle(key, value) {
+      ipcRenderer.invoke('set-config', key, value);
+    }
+
+    async function saveSelect(key, value) {
+      await ipcRenderer.invoke('set-config', key, value);
+      if (key === 'recognitionMode') { updateRecognitionModeVisibility(); updateSetupSteps(); updateSetupStatus(); }
+      if (key === 'basePrompt') updatePromptPreview();
+      if (key === 'cloudTranscribeModel') updateCloudModelDesc();
+      if (key === 'localModel') updateModelDesc();
+      if (key === 'gptPostProcess') updateGptDesc();
+      if (['recognitionMode', 'cloudTranscribeModel', 'gptPostProcess'].includes(key)) loadStats();
+    }
+
+    const promptLabels = {
+      'standard': '「日本語で話しています。」+ 辞書語',
+      'business': '「日本語のビジネス会話。丁寧語。」+ 辞書語',
+      'casual': '「日本語のカジュアルな会話。」+ 辞書語',
+    };
+    function updatePromptPreview() {
+      const val = document.getElementById('opt-basePrompt').value;
+      document.getElementById('prompt-preview').textContent = promptLabels[val] || '';
+    }
+
+    const modelLabels = {
+      'apple': 'macOS純正。音声は端末内。日本語定型文の比較候補',
+      'base': '実測平均1.7秒。最速だが日本語ビジネス文は荒い',
+      'small-q4': '実測平均3〜5秒。定型補正込みの推奨モデル',
+      'small-q5': '実測平均3.3秒。比較用',
+      'small': '実測平均4.8秒。Small系の基準モデル',
+      'medium-q4': '実測平均12秒前後。精度はSmallより少し上',
+      'medium-q5': '実測平均13秒前後。比較用',
+      'kotoba-v2-q4': '実測平均15秒前後。精度は高いが重い',
+      'large-q4': '実測平均12〜18秒。精度確認では最良クラス',
+      'large-q5': '重い。比較用',
+      'large-full': 'かなり重い。比較用',
+    };
+    function updateModelDesc() {
+      const val = document.getElementById('opt-localModel').value;
+      document.getElementById('model-desc').textContent = modelLabels[val] || '';
+    }
+
+    const cloudModelLabels = {
+      mini: '最速・最安。普段使いのメールやチャットならまずこれ',
+      high: '単価は約2倍。固有名詞や長めの文章で精度を見たい時だけ',
+    };
+    function updateCloudModelDesc() {
+      const val = document.getElementById('opt-cloudTranscribeModel').value;
+      document.getElementById('cloud-model-desc').textContent = cloudModelLabels[val] || '';
+    }
+
+    function updateRecognitionModeVisibility() {
+      const mode = document.getElementById('opt-recognitionMode')?.value || 'cloud';
+      document.querySelectorAll('.cloud-model-field').forEach(el => {
+        el.style.display = mode === 'cloud' ? '' : 'none';
+      });
+      document.querySelectorAll('.local-model-field').forEach(el => {
+        el.style.display = mode === 'local' ? '' : 'none';
+      });
+    }
+
+    const gptLabels = {
+      'off': '文字起こしのみ。後処理を最小化します',
+      'dict-only': '辞書の誤認識が見つかった時だけ置換します',
+      'always': '毎回フィラー除去と辞書補正を行います',
+      'cleanup': '長文を見出し・段落・リストに整えます',
+    };
+    function updateGptDesc() {
+      const val = document.getElementById('opt-gptPostProcess').value;
+      document.getElementById('gpt-desc').textContent = gptLabels[val] || '';
+    }
+
+    function savePttKey(value) {
+      ipcRenderer.invoke('set-config', 'pttKey', value);
+      updateModeLabels();
+    }
+
+    function saveCleanupAddonKey(value) {
+      ipcRenderer.invoke('set-config', 'cleanupAddonKey', value);
+      updateModeLabels();
+    }
+
+    function saveSoundPreset(value) {
+      ipcRenderer.invoke('set-config', 'soundPreset', value);
+    }
+
+    function saveSoundVolume(value) {
+      document.getElementById('volume-label').textContent = value + '%';
+      ipcRenderer.invoke('set-config', 'soundVolume', parseInt(value));
+    }
+
+    async function loadAppPrompts() {
+      const prompts = await ipcRenderer.invoke('get-app-prompts');
+      const container = document.getElementById('app-prompt-list');
+      const keys = Object.keys(prompts);
+      if (keys.length === 0) {
+        container.innerHTML = '<div class="empty-state">アプリ別プロンプトは未設定です</div>';
+        return;
+      }
+      let html = '<table class="dict-table"><tr><th>アプリ</th><th>プロンプト</th><th></th></tr>';
+      for (const app of keys) {
+        html += '<tr><td>' + esc(app) + '</td><td>' + esc(prompts[app]) + '</td><td><button class="danger" onclick="removeAppPrompt(\'' + esc(app).replace(/'/g, "\\'") + '\')" style="padding:3px 8px;font-size:11px;">削除</button></td></tr>';
+      }
+      html += '</table>';
+      container.innerHTML = html;
+    }
+
+    async function refreshCurrentAppName() {
+      const name = await ipcRenderer.invoke('get-active-app-name');
+      document.getElementById('current-app-name').textContent = name || '取得できませんでした';
+      return name || '';
+    }
+
+    async function captureAppNameAfterDelay() {
+      const btn = document.getElementById('capture-app-btn');
+      btn.disabled = true;
+      for (let sec = 3; sec > 0; sec--) {
+        btn.textContent = sec + '秒後に取得';
+        document.getElementById('current-app-name').textContent = '対象アプリをクリックしてください';
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      const name = await refreshCurrentAppName();
+      btn.textContent = '3秒後に取得して入力';
+      btn.disabled = false;
+      if (name) document.getElementById('new-app-name').value = name;
+    }
+
+    async function addAppPrompt() {
+      const n = document.getElementById('new-app-name'), p = document.getElementById('new-app-prompt');
+      if (!n.value.trim() || !p.value.trim()) return;
+      await ipcRenderer.invoke('set-app-prompt', n.value.trim(), p.value.trim());
+      n.value = ''; p.value = '';
+      loadAppPrompts();
+    }
+
+    async function removeAppPrompt(appName) {
+      await ipcRenderer.invoke('set-app-prompt', appName, '');
+      loadAppPrompts();
+    }
+
+    async function loadLogs() {
+      if (!ipcRenderer) {
+        document.getElementById('log-area').textContent = '(プレビュー表示のため、実際のログはアプリ起動時に表示されます)';
+        return;
+      }
+      const logs = await ipcRenderer.invoke('get-logs');
+      const area = document.getElementById('log-area');
+      area.textContent = logs || '(ログなし)';
+      area.scrollTop = area.scrollHeight;
+    }
+
+    async function clearLogs() {
+      await ipcRenderer.invoke('clear-logs');
+      document.getElementById('log-area').textContent = '(クリア済み)';
+    }
+
+    function previewSound() {
+      const preset = document.getElementById('opt-soundPreset').value;
+      const volume = parseInt(document.getElementById('opt-soundVolume').value);
+      ipcRenderer.invoke('preview-sound', preset, volume);
+    }
+
+    function restartApp() { ipcRenderer.invoke('restart-app'); }
+
+    function esc(text) {
+      const d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML;
+    }
+
+    document.getElementById('setup-api-key').addEventListener('input', () => {
+      const btn = document.getElementById('setup-api-btn');
+      btn.textContent = '保存';
+      btn.classList.remove('saved');
+    });
+    document.getElementById('review-editor').addEventListener('input', updateReviewCount);
+    document.addEventListener('keydown', (event) => {
+      const overlay = document.getElementById('review-overlay');
+      if (!overlay.classList.contains('active')) return;
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') finishCorrectionReview('copy');
+      if (event.key === 'Escape') finishCorrectionReview('cancel');
+    });
+
+    init();
+  </script>
+</body>
+</html>

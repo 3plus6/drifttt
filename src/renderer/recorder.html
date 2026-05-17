@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head><title>Recorder</title></head>
+<body>
+<script>
+const { ipcRenderer } = require('electron');
+const fs = require('fs');
+
+let mediaStream = null;
+let audioContext = null;
+let sourceNode = null;
+let processorNode = null;
+let chunks = [];
+let isRecording = false;
+let pendingStop = false;
+let isFinishing = false;
+let recordingSessionId = 0;
+
+const TARGET_SAMPLE_RATE = 16000;
+
+async function getStream() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        sampleRate: TARGET_SAMPLE_RATE,
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      }
+    });
+    console.log('[Recorder] マイクストリーム取得');
+    return stream;
+  } catch (err) {
+    console.error('[Recorder] マイクストリーム取得失敗:', err.message);
+    return null;
+  }
+}
+
+function flattenChunks(inputChunks) {
+  const length = inputChunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const result = new Float32Array(length);
+  let offset = 0;
+  for (const chunk of inputChunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
+function floatTo16BitPCM(view, offset, input) {
+  for (let i = 0; i < input.length; i++, offset += 2) {
+    const sample = Math.max(-1, Math.min(1, input[i]));
+    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+  }
+}
+
+function writeString(view, offset, string) {
+  for (let i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
+
+function encodeWav(samples, sampleRate) {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, samples.length * 2, true);
+  floatTo16BitPCM(view, 44, samples);
+
+  return Buffer.from(buffer);
+}
+
+async function cleanupAudio() {
+  if (processorNode) {
+    try { processorNode.disconnect(); } catch {}
+    processorNode.onaudioprocess = null;
+    processorNode = null;
+  }
+  if (sourceNode) {
+    try { sourceNode.disconnect(); } catch {}
+    sourceNode = null;
+  }
+  if (audioContext) {
+    try { await audioContext.close(); } catch {}
+    audioContext = null;
+  }
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop());
+    mediaStream = null;
+  }
+}
+
+async function cancelRecording() {
+  recordingSessionId += 1;
+  pendingStop = false;
+  isRecording = false;
+  chunks = [];
+  await cleanupAudio();
+  ipcRenderer.send('recording-cancelled');
+}
+
+async function finishRecording() {
+  if (isFinishing) return;
+  isFinishing = true;
+  try {
+    await cleanupAudio();
+    const samples = flattenChunks(chunks);
+    const buffer = encodeWav(samples, TARGET_SAMPLE_RATE);
+    const filePath = await ipcRenderer.invoke('get-temp-path');
+    fs.writeFileSync(filePath, buffer);
+    console.log('[Recorder] WAV保存完了:', filePath, '(' + buffer.length + ' bytes)');
+    ipcRenderer.send('recording-complete', filePath);
+  } catch (err) {
+    console.error('[Recorder] 保存エラー:', err.message);
+    ipcRenderer.send('recording-error', err.message);
+  } finally {
+    isFinishing = false;
+  }
+}
+
+ipcRenderer.on('start-recording', async () => {
+  try {
+    const sessionId = ++recordingSessionId;
+    pendingStop = false;
+    isFinishing = false;
+    isRecording = true;
+    mediaStream = await getStream();
+    if (sessionId !== recordingSessionId || !isRecording) {
+      if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
+      mediaStream = null;
+      return;
+    }
+    if (!mediaStream) {
+      isRecording = false;
+      ipcRenderer.send('recording-error', 'マイクストリームを取得できませんでした');
+      return;
+    }
+
+    chunks = [];
+    audioContext = new AudioContext({ sampleRate: TARGET_SAMPLE_RATE });
+    sourceNode = audioContext.createMediaStreamSource(mediaStream);
+    processorNode = audioContext.createScriptProcessor(4096, 1, 1);
+
+    processorNode.onaudioprocess = (event) => {
+      if (!isRecording) return;
+      const input = event.inputBuffer.getChannelData(0);
+      chunks.push(new Float32Array(input));
+    };
+
+    sourceNode.connect(processorNode);
+    processorNode.connect(audioContext.destination);
+    console.log('[Recorder] 録音開始 (WAV/16kHz/mono)');
+
+    if (pendingStop) {
+      pendingStop = false;
+      console.log('[Recorder] 遅延stop処理');
+      isRecording = false;
+      await finishRecording();
+    }
+  } catch (err) {
+    console.error('[Recorder] エラー:', err.message);
+    await cleanupAudio();
+    ipcRenderer.send('recording-error', err.message);
+  }
+});
+
+ipcRenderer.on('stop-recording', async () => {
+  if (isFinishing) return;
+  if (!audioContext || !processorNode) {
+    if (isRecording) {
+      pendingStop = true;
+      console.log('[Recorder] 録音開始待ち中、stop予約');
+    }
+    return;
+  }
+  isRecording = false;
+  console.log('[Recorder] 録音停止');
+  await finishRecording();
+});
+
+ipcRenderer.on('cancel-recording', async () => {
+  console.log('[Recorder] 録音キャンセル');
+  await cancelRecording();
+});
+
+window.addEventListener('beforeunload', () => {
+  isRecording = false;
+  pendingStop = false;
+  if (processorNode) {
+    try { processorNode.disconnect(); } catch {}
+    processorNode.onaudioprocess = null;
+  }
+  if (sourceNode) {
+    try { sourceNode.disconnect(); } catch {}
+  }
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop());
+  }
+});
+</script>
+</body>
+</html>
